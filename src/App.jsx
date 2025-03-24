@@ -25,6 +25,18 @@ function App() {
         setLoading(false);
     };
 
+    const fetchGoogleNews = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_URL}/fetch-google-news/${query}`);
+            const data = await response.json();
+            setNews(data.articles || []);
+        } catch (error) {
+            console.error("Erro ao buscar notícias do Google:", error);
+        }
+        setLoading(false);
+    };
+
     const fetchSavedNews = async () => {
         try {
             const response = await fetch(`${API_URL}/news`);
@@ -35,37 +47,9 @@ function App() {
         }
     };
 
-    const analyzeSentiment = async (text) => {
-        try {
-            const response = await fetch(`${API_URL}/analyze-sentiment/?text=${encodeURIComponent(text)}`);
-            const data = await response.json();
-            return data.sentiment;
-        } catch (error) {
-            console.error("Erro ao analisar o sentimento:", error);
-            return "Não classificado";
-        }
-    };
-
-    const updateNewsSentiments = async () => {
-        const updatedNews = await Promise.all(news.map(async (item) => {
-            if (!item.sentiment || item.sentiment === "Não classificado") {
-                const sentiment = await analyzeSentiment(item.title);
-                return { ...item, sentiment };
-            }
-            return item;
-        }));
-        setNews(updatedNews);
-    };
-
     useEffect(() => {
         fetchSavedNews();
     }, []);
-
-    useEffect(() => {
-        if (news.length > 0) {
-            updateNewsSentiments();
-        }
-    }, [news]);
 
     const renderSentiment = (sentiment) => {
         switch (sentiment) {
@@ -126,10 +110,46 @@ function App() {
                     disabled={loading} 
                     className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                    {loading ? "Carregando..." : "Buscar Notícias"}
+                    {loading ? "Carregando API" : "Buscar API"}
+                </button>
+                <button 
+                    onClick={fetchGoogleNews} 
+                    disabled={loading} 
+                    className="p-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                    {loading ? "Carregando Google News" : "Buscar Google News"}
                 </button>
             </div>
 
+            {/* Filtros */}
+            <div className="flex space-x-4 mb-6">
+                <select value={newsPerPage} onChange={(e) => setNewsPerPage(Number(e.target.value))} className="p-2 border border-gray-300 rounded-md">
+                    <option value={20}>20 por página</option>
+                    <option value={50}>50 por página</option>
+                    <option value={80}>80 por página</option>
+                    <option value={100}>100 por página</option>
+                </select>
+
+                <select value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="p-2 border border-gray-300 rounded-md">
+                    <option value="">Filtrar por Fonte</option>
+                    {uniqueSources.map((source, index) => <option key={index} value={source}>{source}</option>)}
+                </select>
+
+                <select value={selectedSentiment} onChange={(e) => setSelectedSentiment(e.target.value)} className="p-2 border border-gray-300 rounded-md">
+                    <option value="">Filtrar por Sentimento</option>
+                    <option value="positive">Positivo</option>
+                    <option value="negative">Negativo</option>
+                    <option value="neutral">Neutro</option>
+                    <option value="Não classificado">Não classificado</option>
+                </select>
+
+                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="p-2 border border-gray-300 rounded-md">
+                    <option value="recentes">Mais Recentes</option>
+                    <option value="antigas">Mais Antigas</option>
+                </select>
+            </div>
+
+            {/* Exibição das Notícias */}
             <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 mb-4">
                 {currentNews.map((item, index) => (
                     <div key={index} className={`py-4 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}>
@@ -138,21 +158,8 @@ function App() {
                         <p><strong>Fonte:</strong> {item.source?.name || "Desconhecida"}</p>
                         <p><strong>Sentimento:</strong> {renderSentiment(item.sentiment)}</p>
                         <p><strong>Data:</strong> {new Date(item.publishedAt).toLocaleString()}</p>
-                        {item.url && (
-                            <p>
-                                <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                                    Ler notícia completa
-                                </a>
-                            </p>
-                        )}
                     </div>
                 ))}
-            </div>
-
-            <div className="flex items-center space-x-4 mb-8">
-                <button onClick={handlePrevPage} disabled={currentPage === 1} className="p-2 bg-gray-300 rounded-md">Anterior</button>
-                <span>Página {currentPage} de {totalPages}</span>
-                <button onClick={handleNextPage} disabled={currentPage === totalPages} className="p-2 bg-gray-300 rounded-md">Próximo</button>
             </div>
         </div>
     );
