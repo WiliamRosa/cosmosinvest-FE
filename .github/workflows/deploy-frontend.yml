@@ -32,3 +32,4 @@ jobs:
         app_location: "/"
         output_location: "build"
         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        deployment_action: "upload"
