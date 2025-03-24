@@ -10,6 +10,8 @@ function App() {
     const [selectedSentiment, setSelectedSentiment] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("");
     const [sortOrder, setSortOrder] = useState("recentes");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [newsPerPage, setNewsPerPage] = useState(20);
 
     const fetchNews = async () => {
         setLoading(true);
@@ -67,6 +69,21 @@ function App() {
             return 0;
         });
 
+    // Paginação
+    const indexOfLastNews = currentPage * newsPerPage;
+    const indexOfFirstNews = indexOfLastNews - newsPerPage;
+    const currentNews = filteredNews.slice(indexOfFirstNews, indexOfLastNews);
+
+    const totalPages = Math.ceil(filteredNews.length / newsPerPage);
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
+
     const uniqueSources = [...new Set(news.map(item => item.source?.name).filter(Boolean))];
     const uniqueCategories = [...new Set(news.map(item => item.category).filter(Boolean))];
 
@@ -93,22 +110,19 @@ function App() {
 
             {/* Filtros */}
             <div className="flex space-x-4 mb-6">
-                <select 
-                    className="p-2 border border-gray-300 rounded-md"
-                    value={selectedSource}
-                    onChange={(e) => setSelectedSource(e.target.value)}
-                >
-                    <option value="">Filtrar por Fonte</option>
-                    {uniqueSources.map((source, index) => (
-                        <option key={index} value={source}>{source}</option>
-                    ))}
+                <select value={newsPerPage} onChange={(e) => setNewsPerPage(Number(e.target.value))} className="p-2 border border-gray-300 rounded-md">
+                    <option value={20}>20 por página</option>
+                    <option value={50}>50 por página</option>
+                    <option value={80}>80 por página</option>
+                    <option value={100}>100 por página</option>
                 </select>
 
-                <select 
-                    className="p-2 border border-gray-300 rounded-md"
-                    value={selectedSentiment}
-                    onChange={(e) => setSelectedSentiment(e.target.value)}
-                >
+                <select value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="p-2 border border-gray-300 rounded-md">
+                    <option value="">Filtrar por Fonte</option>
+                    {uniqueSources.map((source, index) => <option key={index} value={source}>{source}</option>)}
+                </select>
+
+                <select value={selectedSentiment} onChange={(e) => setSelectedSentiment(e.target.value)} className="p-2 border border-gray-300 rounded-md">
                     <option value="">Filtrar por Sentimento</option>
                     <option value="Positivo">Positivo</option>
                     <option value="Negativo">Negativo</option>
@@ -116,48 +130,27 @@ function App() {
                     <option value="Não classificado">Não classificado</option>
                 </select>
 
-                <select 
-                    className="p-2 border border-gray-300 rounded-md"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                >
+                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="p-2 border border-gray-300 rounded-md">
                     <option value="">Filtrar por Categoria</option>
-                    {uniqueCategories.map((category, index) => (
-                        <option key={index} value={category}>{category}</option>
-                    ))}
-                </select>
-
-                <select 
-                    className="p-2 border border-gray-300 rounded-md"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
-                >
-                    <option value="recentes">Mais Recentes</option>
-                    <option value="antigas">Mais Antigas</option>
+                    {uniqueCategories.map((category, index) => <option key={index} value={category}>{category}</option>)}
                 </select>
             </div>
 
-            <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold mb-4">Notícias Encontradas:</h2>
-                {filteredNews.length === 0 ? (
-                    <p>Nenhuma notícia encontrada.</p>
-                ) : (
-                    <ul>
-                        {filteredNews.map((item, index) => (
-                            <li 
-                                key={index} 
-                                className={`border-b border-gray-300 py-4 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
-                            >
-                                <h3 className="text-xl font-semibold">{item.title}</h3>
-                                <p className="text-gray-700">{item.description}</p>
-                                <p><strong>Fonte:</strong> {item.source?.name || item.source}</p>
-                                <p><strong>Sentimento:</strong> {renderSentiment(item.sentiment)}</p>
-                                <p><strong>Categoria:</strong> {item.category || "Desconhecida"}</p>
-                                <p><strong>Data da Notícia:</strong> {item.publishedAt ? new Date(item.publishedAt).toLocaleString() : "Não informada"}</p>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+            <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 mb-4">
+                {currentNews.map((item, index) => (
+                    <div key={index} className={`py-4 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}>
+                        <h3 className="text-xl font-bold">{item.title}</h3>
+                        <p>{item.description}</p>
+                        <p><strong>Fonte:</strong> {item.source?.name || "Desconhecida"}</p>
+                        <p><strong>Sentimento:</strong> {renderSentiment(item.sentiment)}</p>
+                        <p><strong>Data:</strong> {new Date(item.publishedAt).toLocaleString()}</p>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex space-x-4 mb-8">
+                <button onClick={handlePrevPage} disabled={currentPage === 1} className="p-2 bg-gray-300 rounded-md">Anterior</button>
+                <button onClick={handleNextPage} disabled={currentPage === totalPages} className="p-2 bg-gray-300 rounded-md">Próximo</button>
             </div>
         </div>
     );
