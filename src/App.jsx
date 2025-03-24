@@ -35,17 +35,45 @@ function App() {
         }
     };
 
+    const analyzeSentiment = async (text) => {
+        try {
+            const response = await fetch(`${API_URL}/analyze-sentiment/?text=${encodeURIComponent(text)}`);
+            const data = await response.json();
+            return data.sentiment;
+        } catch (error) {
+            console.error("Erro ao analisar o sentimento:", error);
+            return "Não classificado";
+        }
+    };
+
+    const updateNewsSentiments = async () => {
+        const updatedNews = await Promise.all(news.map(async (item) => {
+            if (!item.sentiment || item.sentiment === "Não classificado") {
+                const sentiment = await analyzeSentiment(item.title);
+                return { ...item, sentiment };
+            }
+            return item;
+        }));
+        setNews(updatedNews);
+    };
+
     useEffect(() => {
         fetchSavedNews();
     }, []);
 
+    useEffect(() => {
+        if (news.length > 0) {
+            updateNewsSentiments();
+        }
+    }, [news]);
+
     const renderSentiment = (sentiment) => {
         switch (sentiment) {
-            case "Positivo":
+            case "positive":
                 return <span className="text-green-600">👍 Positivo</span>;
-            case "Negativo":
+            case "negative":
                 return <span className="text-red-600">👎 Negativo</span>;
-            case "Neutro":
+            case "neutral":
                 return <span className="text-gray-600">🤷 Neutro</span>;
             case "Não classificado":
             default:
@@ -53,7 +81,6 @@ function App() {
         }
     };
 
-    // Filtrar e ordenar as notícias
     const filteredNews = news
         .filter(item => 
             (selectedSource ? item.source?.name === selectedSource : true) &&
@@ -61,15 +88,11 @@ function App() {
             (selectedCategory ? item.category === selectedCategory : true)
         )
         .sort((a, b) => {
-            if (sortOrder === "recentes") {
-                return new Date(b.publishedAt) - new Date(a.publishedAt);
-            } else if (sortOrder === "antigas") {
-                return new Date(a.publishedAt) - new Date(b.publishedAt);
-            }
+            if (sortOrder === "recentes") return new Date(b.publishedAt) - new Date(a.publishedAt);
+            if (sortOrder === "antigas") return new Date(a.publishedAt) - new Date(b.publishedAt);
             return 0;
         });
 
-    // Paginação
     const indexOfLastNews = currentPage * newsPerPage;
     const indexOfFirstNews = indexOfLastNews - newsPerPage;
     const currentNews = filteredNews.slice(indexOfFirstNews, indexOfLastNews);
@@ -105,34 +128,6 @@ function App() {
                 >
                     {loading ? "Carregando..." : "Buscar Notícias"}
                 </button>
-            </div>
-
-            {/* Filtros */}
-            <div className="flex space-x-4 mb-6">
-                <select value={newsPerPage} onChange={(e) => setNewsPerPage(Number(e.target.value))} className="p-2 border border-gray-300 rounded-md">
-                    <option value={20}>20 por página</option>
-                    <option value={50}>50 por página</option>
-                    <option value={80}>80 por página</option>
-                    <option value={100}>100 por página</option>
-                </select>
-
-                <select value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="p-2 border border-gray-300 rounded-md">
-                    <option value="">Filtrar por Fonte</option>
-                    {uniqueSources.map((source, index) => <option key={index} value={source}>{source}</option>)}
-                </select>
-
-                <select value={selectedSentiment} onChange={(e) => setSelectedSentiment(e.target.value)} className="p-2 border border-gray-300 rounded-md">
-                    <option value="">Filtrar por Sentimento</option>
-                    <option value="Positivo">Positivo</option>
-                    <option value="Negativo">Negativo</option>
-                    <option value="Neutro">Neutro</option>
-                    <option value="Não classificado">Não classificado</option>
-                </select>
-
-                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="p-2 border border-gray-300 rounded-md">
-                    <option value="">Filtrar por Categoria</option>
-                    {uniqueCategories.map((category, index) => <option key={index} value={category}>{category}</option>)}
-                </select>
             </div>
 
             <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 mb-4">
