@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_URL = "https://cosmosinvestapp.azurewebsites.net";
+const API_URL = "https://cosmosinvestapp.azurewebsites.net";  // URL do backend na Azure
 
 function App() {
     const [news, setNews] = useState([]);
