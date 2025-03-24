@@ -34,32 +34,39 @@ function App() {
     }, []);
 
     return (
-        <div className="App" style={{ padding: "20px", fontFamily: "Arial" }}>
-            <h1>Cosmos Invest - Monitoramento de Notícias</h1>
-            <input 
-                type="text" 
-                placeholder="Digite o termo da pesquisa" 
-                value={query} 
-                onChange={e => setQuery(e.target.value)}
-            />
-            <button onClick={fetchNews} disabled={loading}>
-                {loading ? "Carregando..." : "Buscar Notícias"}
-            </button>
+        <div className="min-h-screen bg-gray-100 flex flex-col items-center p-8">
+            <h1 className="text-4xl font-bold text-blue-600 mb-8">Cosmos Invest - Monitoramento de Notícias</h1>
+            
+            <div className="flex space-x-4 mb-8">
+                <input 
+                    type="text" 
+                    placeholder="Digite o termo da pesquisa" 
+                    value={query} 
+                    onChange={e => setQuery(e.target.value)}
+                    className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                    onClick={fetchNews} 
+                    disabled={loading} 
+                    className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                    {loading ? "Carregando..." : "Buscar Notícias"}
+                </button>
+            </div>
 
-            <div>
-                <h2>Notícias Encontradas:</h2>
+            <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-2xl font-bold mb-4">Notícias Encontradas:</h2>
                 {news.length === 0 ? (
                     <p>Nenhuma notícia encontrada.</p>
                 ) : (
                     <ul>
                         {news.map((item, index) => (
-                            <li key={index}>
-                                <h3>{item.title}</h3>
-                                <p>{item.description}</p>
+                            <li key={index} className="border-b border-gray-300 py-4">
+                                <h3 className="text-xl font-semibold">{item.title}</h3>
+                                <p className="text-gray-700">{item.description}</p>
                                 <p><strong>Fonte:</strong> {item.source?.name || item.source}</p>
                                 <p><strong>Sentimento:</strong> {item.sentiment || "Não classificado"}</p>
                                 <p><strong>Categoria:</strong> {item.category || "Desconhecida"}</p>
-                                <hr />
                             </li>
                         ))}
                     </ul>

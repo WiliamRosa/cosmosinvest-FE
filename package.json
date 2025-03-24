@@ -14,12 +14,10 @@
       "react-dom": "^18.0.0",
       "react-scripts": "5.0.0"
     },
-    "devDependencies": {},
-    "eslintConfig": {
-      "extends": [
-        "react-app",
-        "react-app/jest"
-      ]
+    "devDependencies": {
+      "tailwindcss": "^3.0.0",
+      "postcss": "^8.0.0",
+      "autoprefixer": "^10.0.0"
     },
     "browserslist": {
       "production": [
