@@ -61,12 +61,16 @@ function App() {
                 ) : (
                     <ul>
                         {news.map((item, index) => (
-                            <li key={index} className="border-b border-gray-300 py-4">
+                            <li 
+                                key={index} 
+                                className={`border-b border-gray-300 py-4 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
+                            >
                                 <h3 className="text-xl font-semibold">{item.title}</h3>
                                 <p className="text-gray-700">{item.description}</p>
                                 <p><strong>Fonte:</strong> {item.source?.name || item.source}</p>
                                 <p><strong>Sentimento:</strong> {item.sentiment || "Não classificado"}</p>
                                 <p><strong>Categoria:</strong> {item.category || "Desconhecida"}</p>
+                                <p><strong>Data da Notícia:</strong> {item.publishedAt ? new Date(item.publishedAt).toLocaleString() : "Não informada"}</p>
                             </li>
                         ))}
                     </ul>
