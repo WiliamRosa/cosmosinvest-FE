@@ -143,6 +143,13 @@ function App() {
                         <p><strong>Fonte:</strong> {item.source?.name || "Desconhecida"}</p>
                         <p><strong>Sentimento:</strong> {renderSentiment(item.sentiment)}</p>
                         <p><strong>Data:</strong> {new Date(item.publishedAt).toLocaleString()}</p>
+                        {item.url && (
+                            <p>
+                                <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                    Ler notícia completa
+                                </a>
+                            </p>
+                        )}
                     </div>
                 ))}
             </div>
