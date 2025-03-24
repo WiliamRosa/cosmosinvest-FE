@@ -37,6 +37,20 @@ function App() {
         fetchSavedNews();
     }, []);
 
+    const renderSentiment = (sentiment) => {
+        switch (sentiment) {
+            case "Positivo":
+                return <span className="text-green-600">👍 Positivo</span>;
+            case "Negativo":
+                return <span className="text-red-600">👎 Negativo</span>;
+            case "Neutro":
+                return <span className="text-gray-600">🤷 Neutro</span>;
+            case "Não classificado":
+            default:
+                return <span className="text-yellow-600">❓ Não classificado</span>;
+        }
+    };
+
     // Filtrar e ordenar as notícias
     const filteredNews = news
         .filter(item => 
@@ -99,6 +113,7 @@ function App() {
                     <option value="Positivo">Positivo</option>
                     <option value="Negativo">Negativo</option>
                     <option value="Neutro">Neutro</option>
+                    <option value="Não classificado">Não classificado</option>
                 </select>
 
                 <select 
@@ -136,7 +151,7 @@ function App() {
                                 <h3 className="text-xl font-semibold">{item.title}</h3>
                                 <p className="text-gray-700">{item.description}</p>
                                 <p><strong>Fonte:</strong> {item.source?.name || item.source}</p>
-                                <p><strong>Sentimento:</strong> {item.sentiment || "Não classificado"}</p>
+                                <p><strong>Sentimento:</strong> {renderSentiment(item.sentiment)}</p>
                                 <p><strong>Categoria:</strong> {item.category || "Desconhecida"}</p>
                                 <p><strong>Data da Notícia:</strong> {item.publishedAt ? new Date(item.publishedAt).toLocaleString() : "Não informada"}</p>
                             </li>
