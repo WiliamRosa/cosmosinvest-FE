@@ -73,7 +73,6 @@ function App() {
     const indexOfLastNews = currentPage * newsPerPage;
     const indexOfFirstNews = indexOfLastNews - newsPerPage;
     const currentNews = filteredNews.slice(indexOfFirstNews, indexOfLastNews);
-
     const totalPages = Math.ceil(filteredNews.length / newsPerPage);
 
     const handleNextPage = () => {
@@ -148,8 +147,9 @@ function App() {
                 ))}
             </div>
 
-            <div className="flex space-x-4 mb-8">
+            <div className="flex items-center space-x-4 mb-8">
                 <button onClick={handlePrevPage} disabled={currentPage === 1} className="p-2 bg-gray-300 rounded-md">Anterior</button>
+                <span>Página {currentPage} de {totalPages}</span>
                 <button onClick={handleNextPage} disabled={currentPage === totalPages} className="p-2 bg-gray-300 rounded-md">Próximo</button>
             </div>
         </div>
