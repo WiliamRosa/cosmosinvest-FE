@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import Sentiment from 'sentiment';
+import Parser from 'rss-parser';
 
 const API_URL = "https://cosmosinvestapp.azurewebsites.net";  // URL do backend na Azure
+const parser = new Parser();
+const sentimentAnalyzer = new Sentiment();
 
 function App() {
     const [news, setNews] = useState([]);
@@ -8,65 +12,61 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [selectedSource, setSelectedSource] = useState("");
     const [selectedSentiment, setSelectedSentiment] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("");
     const [sortOrder, setSortOrder] = useState("recentes");
     const [currentPage, setCurrentPage] = useState(1);
     const [newsPerPage, setNewsPerPage] = useState(20);
 
-    const fetchNews = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${API_URL}/fetch-news/${query}`);
-            const data = await response.json();
-            setNews(data.articles || []);
-        } catch (error) {
-            console.error("Erro ao buscar notícias:", error);
-        }
-        setLoading(false);
-    };
-
     const fetchGoogleNews = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/fetch-google-news/${query}`);
-            const data = await response.json();
-            const analyzedNews = await Promise.all(data.articles.map(async (item) => {
-                const sentimentResponse = await fetch(`${API_URL}/analyze-sentiment/?text=${encodeURIComponent(item.title)}`);
-                const sentimentData = await sentimentResponse.json();
-                return { ...item, sentiment: sentimentData.sentiment };
-            }));
-            setNews(analyzedNews);
+            const url = `https://news.google.com/rss/search?q=${query}&hl=pt-BR&gl=BR&ceid=BR:pt`;
+            const feed = await parser.parseURL(url);
+
+            const articles = feed.items.map(item => {
+                const sentimentResult = sentimentAnalyzer.analyze(item.title);
+                let sentiment = "Não classificado";
+                if (sentimentResult.score > 0) sentiment = "Positivo";
+                else if (sentimentResult.score < 0) sentiment = "Negativo";
+                else sentiment = "Neutro";
+
+                return {
+                    title: item.title,
+                    description: item.contentSnippet,
+                    source: "Google News",
+                    sentiment,
+                    publishedAt: item.pubDate,
+                    url: item.link
+                };
+            });
+            setNews(articles);
         } catch (error) {
-            console.error("Erro ao buscar notícias do Google:", error);
+            console.error("Erro ao buscar notícias do Google News:", error);
         }
         setLoading(false);
     };
 
-    const fetchSavedNews = async () => {
-        try {
-            const response = await fetch(`${API_URL}/news`);
-            const data = await response.json();
-            setNews(data);
-        } catch (error) {
-            console.error("Erro ao buscar notícias salvas:", error);
-        }
+    const filteredNews = news
+        .filter(item =>
+            (selectedSource ? item.source === selectedSource : true) &&
+            (selectedSentiment ? item.sentiment === selectedSentiment : true)
+        )
+        .sort((a, b) => {
+            if (sortOrder === "recentes") return new Date(b.publishedAt) - new Date(a.publishedAt);
+            if (sortOrder === "antigas") return new Date(a.publishedAt) - new Date(b.publishedAt);
+            return 0;
+        });
+
+    const indexOfLastNews = currentPage * newsPerPage;
+    const indexOfFirstNews = indexOfLastNews - newsPerPage;
+    const currentNews = filteredNews.slice(indexOfFirstNews, indexOfLastNews);
+    const totalPages = Math.ceil(filteredNews.length / newsPerPage);
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
 
-    useEffect(() => {
-        fetchSavedNews();
-    }, []);
-
-    const renderSentiment = (sentiment) => {
-        switch (sentiment) {
-            case "positive":
-                return <span className="text-green-600">👍 Positivo</span>;
-            case "negative":
-                return <span className="text-red-600">👎 Negativo</span>;
-            case "neutral":
-                return <span className="text-gray-600">🤷 Neutro</span>;
-            default:
-                return <span className="text-yellow-600">❓ Não classificado</span>;
-        }
+    const handlePrevPage = () => {
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
     };
 
     return (
@@ -82,34 +82,23 @@ function App() {
                     className="p-2 border border-gray-300 rounded-md"
                 />
                 <button 
-                    onClick={fetchNews} 
-                    disabled={loading} 
-                    className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                    {loading ? "Carregando API..." : "Buscar API"}
-                </button>
-                <button 
                     onClick={fetchGoogleNews} 
                     disabled={loading} 
-                    className="p-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    className="p-2 bg-green-600 text-white rounded-md"
                 >
                     {loading ? "Carregando Google News..." : "Buscar Google News"}
                 </button>
             </div>
 
             <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 mb-4">
-                {news.map((item, index) => (
-                    <div key={index} className={`py-4 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}>
+                {currentNews.map((item, index) => (
+                    <div key={index} className="py-4 border-b">
                         <h3 className="text-xl font-bold">{item.title}</h3>
                         <p>{item.description}</p>
-                        <p><strong>Fonte:</strong> {item.source?.name || "Desconhecida"}</p>
-                        <p><strong>Sentimento:</strong> {renderSentiment(item.sentiment)}</p>
-                        <p><strong>Data:</strong> {item.published_at || "Data não disponível"}</p>
-                        {item.url && (
-                            <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                                Ler notícia completa
-                            </a>
-                        )}
+                        <p><strong>Fonte:</strong> {item.source}</p>
+                        <p><strong>Sentimento:</strong> {item.sentiment}</p>
+                        <p><strong>Data:</strong> {item.publishedAt}</p>
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500">Ler notícia completa</a>
                     </div>
                 ))}
             </div>
